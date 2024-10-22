@@ -1,0 +1,9 @@
+<h4>Tačke se mogu dodati klikom na čitav (bijeli) ekran (odmah ispod ove upute). Potrebno je odabrati tri tačke nakon čega se formira trougao. Klikom unutar ili van trougla javlja se poruka na dnu stranice koja obavještava da li je posljednja odabrana tačka unutar ili van trougla.
+</h4>
+<canvas #canvas (click)="canvasClick($event)" style="border: 1px solid black;"></canvas>
+<div class="modal" *ngIf="prikaziModal">
+  <div class="modal-content">
+    <h2>Tačka je {{ unutar ? 'unutar' : 'van' }} trougla.</h2>
+    <button (click)="zatvoriModal()">OK</button>
+  </div>
+</div>

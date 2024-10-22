@@ -1,0 +1,55 @@
+/* Remove padding from the navbar */
+.navbar {
+    padding: 0;
+  }
+  
+  /* Display list items inline and adjust margin and padding */
+  .navbar-nav {
+    display: flex;
+    align-items: center;
+    padding-left: 0;
+    margin-bottom: 0;
+    list-style: none;
+  }
+  
+  .nav-item {
+    display: inline-block;
+  }
+  
+  /* Style the links to look like buttons */
+  .nav-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .nav-link:hover,
+  .nav-link:focus {
+    color: #0056b3;
+    text-decoration: none;
+    background-color: #f8f9fa;
+  }
+  
+  /* Make the navbar brand look like a button */
+  .navbar-brand {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    color: #333;
+    text-decoration: none;
+  }
+  
+  .navbar-brand:hover,
+  .navbar-brand:focus {
+    color: #0056b3;
+    text-decoration: none;
+    background-color: #f8f9fa;
+  }
+  
+  /* Hide the navbar toggler when the navbar is expanded */
+  @media (min-width: 992px) {
+    .navbar-toggler {
+      display: none;
+    }
+  }
+  

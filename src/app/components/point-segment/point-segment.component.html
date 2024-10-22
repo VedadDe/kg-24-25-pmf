@@ -1,0 +1,30 @@
+<div>
+    <h1>Kanvas crtanje tačke i linijskog segmenta</h1>
+    <canvas #canvasRef width="600" height="400" (click)="onCanvasClick($event)" style="border:1px solid black;"></canvas>
+  </div>
+  
+  <div>
+    <button (click)="crtajSegment()" [disabled]="tacke.length < 2">Nacrtaj segment između posljednje dvije dodane tačke</button>
+    <button (click)="ocistiCanvas()">Obriši tačke</button>
+  </div>
+  
+  <div>
+    <h2>Lista tačaka</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>X koordinata</th>
+          <th>Y koordinata</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let point of tacke; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ point.x }}</td>
+          <td>{{ point.y }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  

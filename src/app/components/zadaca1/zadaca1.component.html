@@ -1,0 +1,32 @@
+<div>
+    <h1>Kanvas za izradu zadaće 1</h1>
+    <h4>Dodajte dvije tačke nakon čega će se iscrtati krug, bez pozivanja i dodavanja dugmeta za crtanje kruga</h4>
+    <canvas #canvasRef width="1900" height="800" (click)="onCanvasClick($event)" style="border:1px solid black;"></canvas>
+  </div>
+  
+  <div>
+    <button (click)="ocistiCanvas()">Obriši tačke</button>
+    <button (click)="tackaUnutarKruga()" style="margin: 10px;">Da li je tačka unutar kruga</button>
+    <button (click)="odnosSegmentaIKruga()">Prikaži linijski segment između posljednje dvije dodane tačke i provjeri odnos u odnosu na zadani krug </button>
+  </div>
+  
+  <div>
+    <h2>Lista tačaka</h2>
+    <table border="1">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>X koordinata</th>
+          <th>Y koordinata</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let point of tacke; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ point.x }}</td>
+          <td>{{ point.y }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
