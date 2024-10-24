@@ -3,6 +3,7 @@ interface Tacka {
   x: number;
   y: number;
 }
+const epsilon: number = 1e-9;
 @Component({
   selector: 'app-zadaca1',
   templateUrl: './zadaca1.component.html',
@@ -14,9 +15,7 @@ export class Zadaca1Component implements AfterViewInit{
 
   @ViewChild('canvasRef', { static: true }) canvasRef!: ElementRef<HTMLCanvasElement>;
 
-
   ctx!: CanvasRenderingContext2D;
-
 
   tacke: Tacka[] = [];
 
@@ -43,6 +42,36 @@ export class Zadaca1Component implements AfterViewInit{
     this.tacke.push(tacka);
 
     this.crtajTacku(tacka);
+
+    // Ako su dvije tačke kliknute, onda crtamo kružnicu
+    if(this.tacke.length === 2) {
+      // Računamo poluprečnik kružnice
+      const dx = this.tacke[1].x - this.tacke[0].x;
+      const dy = this.tacke[1].y - this.tacke[0].y; 
+      const radius = Math.sqrt(dx*dx + dy*dy);
+
+      // Prvojeravamo da li je poluprecnik = 0
+      if(radius < epsilon) {
+        const poruka = document.getElementById("poruka");
+        if(poruka) {
+          poruka.innerText = "Poluprečnik kružnice je nula – nije moguće nacrtati kružnicu"
+        }
+        this.ocistiCanvas();
+      }
+      // Provjeravamo da li kruznica moze stati na kanvas
+      else if((this.tacke[0].x - radius < 0) || (this.tacke[0].y - radius < 0) || (this.tacke[0].x + radius >= rect.width) || this.tacke[0].y + radius >= rect.height) {
+        const poruka = document.getElementById("poruka");
+        if(poruka != null) {
+          poruka.innerText = "Kružnica ne može stati unutar kanvasa";
+          this.ocistiCanvas();
+        }
+      }
+      else {
+        this.ctx.beginPath();
+        this.ctx.arc(this.tacke[0].x, this.tacke[0].y, radius, 0, 2 * Math.PI);    
+        this.ctx.stroke();
+      }
+    }
   }
   
 
