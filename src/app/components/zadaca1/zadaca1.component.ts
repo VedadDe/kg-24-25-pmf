@@ -46,9 +46,7 @@ export class Zadaca1Component implements AfterViewInit{
     // Ako su dvije tačke kliknute, onda crtamo kružnicu
     if(this.tacke.length === 2) {
       // Računamo poluprečnik kružnice
-      const dx = this.tacke[1].x - this.tacke[0].x;
-      const dy = this.tacke[1].y - this.tacke[0].y; 
-      const radius = Math.sqrt(dx*dx + dy*dy);
+      const radius = this.getPoluprecnik();
 
       // Prvojeravamo da li je poluprecnik = 0
       if(radius < epsilon) {
@@ -91,8 +89,47 @@ export class Zadaca1Component implements AfterViewInit{
     this.tacke = []; 
   }
 
+  getPoluprecnik(): number {
+
+    return this.udaljenostTacaka(this.tacke[0], this.tacke[1]);
+  }
+  
+  udaljenostTacaka(A: Tacka, B: Tacka): number {
+    const dx = A.x - B.x;
+    const dy = A.y - B.y; 
+    const udaljenost = Math.sqrt(dx*dx + dy*dy);
+    return udaljenost;
+  }
+
   tackaUnutarKruga(): void{
-    console.log("Tacka u odnosu na krug test")
+    if(this.tacke.length < 2) {
+      return;
+    }
+    const radius = this.getPoluprecnik();
+    
+    // Racunamo udaljenost posljednje dodane tacke od centra kruznice i taj rezultat cemo uporediti sa poluprecnikom
+    const udaljenost: number = this.udaljenostTacaka(this.tacke[0], this.tacke[this.tacke.length-1]);
+    if(Math.abs(udaljenost - radius) < epsilon) {
+      // Tacka je na kruznici
+      const poruka = document.getElementById("poruka");
+      if(poruka != null) {
+        poruka.innerText = "Tačka se nalazi na kružnici";
+      }
+
+    } else if(udaljenost < radius) {
+      // Tacka je unutar kruznice
+      const poruka = document.getElementById("poruka");
+      if(poruka != null) {
+        poruka.innerText = "Tačka se nalazi unutar kružnice";
+      } 
+    
+    } else {
+      // Tacka je van kruznice
+      const poruka = document.getElementById("poruka");
+      if(poruka != null) {
+        poruka.innerText = "Tačka se nalazi van kružnice";
+      } 
+    }
   }
 
   odnosSegmentaIKruga(): void{
