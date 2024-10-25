@@ -45,6 +45,7 @@ export class Zadaca1Component implements AfterViewInit{
     canvas.height = 800; 
   }
 
+  // Metoda koja računa poluprečnik kružnice
   getPoluprecnik(): number {
     return udaljenostTacaka(this.tacke[0], this.tacke[1]);
   }
@@ -166,7 +167,7 @@ export class Zadaca1Component implements AfterViewInit{
     else if(udaljenostA < radius && udaljenostB < radius) {
       prikaziPoruku("Segment je unutar kružnice.");
     }
-    //  Ako se jedna od tačaa A ili B nalazi unutar kruznice, a druga van, onda segment siječe kružnicu
+    //  Ako se jedna od tačaka A ili B nalazi unutar kruznice, a druga van, onda segment siječe kružnicu
     else if( (udaljenostA < radius && udaljenostB > radius) || (udaljenostA > radius && udaljenostB < radius)) {
       prikaziPoruku("Segment siječe kružnicu.");
     }
