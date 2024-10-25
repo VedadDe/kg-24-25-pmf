@@ -88,6 +88,7 @@ export class Zadaca1Component implements AfterViewInit{
         this.ctx.beginPath();
         this.ctx.arc(this.tacke[0].x, this.tacke[0].y, radius, 0, 2 * Math.PI);    
         this.ctx.stroke();
+        prikaziPoruku("Kruznica nacrtana!")
       }
     }
   }
