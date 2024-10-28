@@ -9,6 +9,27 @@
     <button (click)="tackaUnutarKruga()" style="margin: 10px;">Da li je tačka unutar kruga</button>
     <button (click)="odnosSegmentaIKruga()">Prikaži linijski segment između posljednje dvije dodane tačke i provjeri odnos u odnosu na zadani krug </button>
   </div>
+
+  <div class="modal" *ngIf="prikaziModalError">
+    <div class="modal-content">
+      <h2>{{error}} </h2>
+      <button (click)="zatvoriModalError()">OK</button>
+    </div>
+  </div>
+
+  <div class="modal" *ngIf="prikaziModalTacka">
+    <div class="modal-content">
+      <h2>Tačka je {{tackaJe}} </h2>
+      <button (click)="zatvoriModalTacka()">OK</button>
+    </div>
+  </div>
+
+  <div class="modal" *ngIf="prikaziModalSegment">
+    <div class="modal-content">
+      <h2>Segment {{segmentJe}} </h2>
+      <button (click)="zatvoriModalSegment()">OK</button>
+    </div>
+  </div>
   
   <div>
     <h2>Lista tačaka</h2>
