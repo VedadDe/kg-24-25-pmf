@@ -214,19 +214,6 @@ export class Zadaca1Component implements AfterViewInit{
           else this.segmentJe = 'van kruznice';
         }
 
-        
-        /*
-        const udaljenostSegmentaOdCentra = 
-        
-        //KORISTIT SA WIKIPEDIJE A I B NACIN
-        Math.abs((posljednja.y - pretposljednja.y)*centar.x 
-        - (posljednja.x - pretposljednja.x)*centar.y 
-        + posljednja.x*pretposljednja.y
-        - posljednja.y*pretposljednja.x) / Math.sqrt(Math.pow(posljednja.y - pretposljednja.y, 2) + Math.pow(posljednja.x - pretposljednja.x, 2));
-
-        JEL TACKA PRESJEKA NA SEGMENTU??
-        */
-
       }
       
 
