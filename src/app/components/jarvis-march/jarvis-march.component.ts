@@ -6,10 +6,10 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
   styleUrls: ['./jarvis-march.component.scss']
 })
 export class JarvisMarchComponent {
-  @ViewChild('canvas', { static: true })  canvas!: ElementRef<HTMLCanvasElement>; 
-
+  @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>; 
   tacke: { x: number; y: number }[] = [];
-
+  omotaci: { x: number; y: number }[][] = []; 
+  generisaniOmotači: boolean = false;  // Flag za provjeru da su omotači generisani, nakon kliknutog dugmeta za poziv DivideIntoConvex postavlja se na true 
 
   ngOnInit(): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
@@ -20,12 +20,61 @@ export class JarvisMarchComponent {
       const pravougaonik = canvasEl.getBoundingClientRect();
       const x = dogadjaj.clientX - pravougaonik.left;
       const y = dogadjaj.clientY - pravougaonik.top;
-      this.tacke.push({ x, y });
-      if (kontekst) {
-        this.crtajTacke(kontekst);
+
+      if (this.generisaniOmotači) {
+        // Provjera za tačku nakon generisanja omotača
+        this.provjeraTacke({ x, y });
+      } else {
+        // dodavanje tački ako omotači nisu generisani
+        this.tacke.push({ x, y });
+        if (kontekst) {
+          this.crtajTacke(kontekst);
+        }
       }
     });
   }
+
+  // DivideIntoConvex: kreiranje omotača, trenutno generise samo jedan omotač
+  DivideIntoConvex(): void {
+    this.generisaniOmotači = true
+    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+    const kontekst = canvasEl.getContext('2d');
+    let omotac = this.grahamovAlgoritam(this.tacke)
+    this.crtajOmotac(kontekst, omotac)
+    if (this.tacke.length <= 3)
+      return
+
+
+
+
+  }
+
+  // provjeraTacke: 
+  provjeraTacke(point: { x: number; y: number }): void {
+    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+    const kontekst = canvasEl.getContext('2d');
+    
+    //
+    //this.crtajOmotac(kontekst, omotac)
+  }
+
+  tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
+   
+    return true
+  }
+
+  crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
+    if (!kontekst) return;
+    kontekst.strokeStyle = color;
+    kontekst.beginPath();
+    kontekst.moveTo(omotac[0].x, omotac[0].y);
+    for (let i = 1; i < omotac.length; i++) {
+      kontekst.lineTo(omotac[i].x, omotac[i].y);
+    }
+    kontekst.closePath();
+    kontekst.stroke();
+  }
+
 
   //invertovan koordinatni sistem, kako bi se poklapao sa tradicionalnim pogledom
 //   jarvisMarch(tacke: { x: number; y: number }[], canvasHeight: number): { x: number; y: number }[] { 
@@ -129,14 +178,7 @@ export class JarvisMarchComponent {
 
 
 
-  najdaljeTacke() {
-    const omotac = this.jarvisMarch(this.tacke);
-    let maxUdaljenost = 0;
-    let tacka1 = null;
-    let tacka2 = null;
-
-    console.log(maxUdaljenost, tacka1, tacka2 );
-   }
+  
   
   vektorskiProizvod(o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
     return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
@@ -150,10 +192,6 @@ export class JarvisMarchComponent {
     return Math.atan2(a.y - tacka0.y, a.x - tacka0.x) - Math.atan2(b.y - tacka0.y, b.x - tacka0.x);
   }
 
-  // Funkcija za računanje udaljenosti između dvije tačke
-  udaljenost(p1 : { x: number; y: number } , p2: { x: number; y: number }): number {
-    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
-  }
 
   pokreniJarvisMarch(): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
@@ -175,21 +213,6 @@ export class JarvisMarchComponent {
     return vektorskiProizvod > 0;
 }
 
-  crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[]): void {
-      if (!kontekst) {
-          return;
-      }
-      kontekst.strokeStyle = 'red';
-      kontekst.beginPath();
-      kontekst.moveTo(omotac[0].x, omotac[0].y);
-
-      for (let i = 1; i < omotac.length; i++) {
-          kontekst.lineTo(omotac[i].x, omotac[i].y);
-      }
-
-      kontekst.closePath();
-      kontekst.stroke();
-  }
 
   crtajTacke(kontekst: CanvasRenderingContext2D): void {
       const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
