@@ -26,36 +26,8 @@ export class JarvisMarchComponent {
       }
     });
   }
-  vektorskiProizvod(o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
-    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
-  }
 
-  porediPolarniUgao(tacka0: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
-    const vp = this.vektorskiProizvod(tacka0, a, b);
-    if (vp === 0) {
-      return Math.sqrt(Math.pow(a.x - tacka0.x, 2) + Math.pow(a.y - tacka0.y, 2)) - Math.sqrt(Math.pow(b.x - tacka0.x, 2) + Math.pow(b.y - tacka0.y, 2));
-    }
-    return Math.atan2(a.y - tacka0.y, a.x - tacka0.x) - Math.atan2(b.y - tacka0.y, b.x - tacka0.x);
-  }
-  
-
-
-  pokreniJarvisMarch(): void {
-    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
-    const kontekst = canvasEl.getContext('2d');
-    // const omotac = this.jarvisMarch(this.tacke, canvasEl.height);
-    const omotac = this.jarvisMarch(this.tacke,);
-    this.crtajOmotac(kontekst, omotac);
-    console.log("gotovo")
-  }
-  pokreniGrahamScan(): void {
-    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
-    const kontekst = canvasEl.getContext('2d');
-    const omotac = this.grahamovAlgoritam(this.tacke);
-    this.crtajOmotac(kontekst, omotac);
-    console.log("gotovo")
-  }
-  
+  //invertovan koordinatni sistem, kako bi se poklapao sa tradicionalnim pogledom
 //   jarvisMarch(tacke: { x: number; y: number }[], canvasHeight: number): { x: number; y: number }[] { 
 //     const transformedPoints = tacke.map(point => ({ x: point.x, y: canvasHeight - point.y }));
 //     let najniziIndeks = 0;
@@ -119,6 +91,8 @@ export class JarvisMarchComponent {
   
      return omotac;
   }
+
+
   grahamovAlgoritam(tacke: { x: number; y: number }[]): { x: number; y: number }[] {
     let najniziIndeks = 0;
     for (let i = 1; i < tacke.length; i++) {
@@ -151,55 +125,98 @@ export class JarvisMarchComponent {
     }
 
     return omotac;
-}
+  }
+
+
+
+  najdaljeTacke() {
+    const omotac = this.jarvisMarch(this.tacke);
+    let maxUdaljenost = 0;
+    let tacka1 = null;
+    let tacka2 = null;
+
+    console.log(maxUdaljenost, tacka1, tacka2 );
+   }
   
+  vektorskiProizvod(o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+    return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  }
+
+  porediPolarniUgao(tacka0: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+    const vp = this.vektorskiProizvod(tacka0, a, b);
+    if (vp === 0) {
+      return Math.sqrt(Math.pow(a.x - tacka0.x, 2) + Math.pow(a.y - tacka0.y, 2)) - Math.sqrt(Math.pow(b.x - tacka0.x, 2) + Math.pow(b.y - tacka0.y, 2));
+    }
+    return Math.atan2(a.y - tacka0.y, a.x - tacka0.x) - Math.atan2(b.y - tacka0.y, b.x - tacka0.x);
+  }
+
+  // Funkcija za računanje udaljenosti između dvije tačke
+  udaljenost(p1 : { x: number; y: number } , p2: { x: number; y: number }): number {
+    return Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+  }
+
+  pokreniJarvisMarch(): void {
+    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+    const kontekst = canvasEl.getContext('2d');
+    // const omotac = this.jarvisMarch(this.tacke, canvasEl.height);
+    const omotac = this.jarvisMarch(this.tacke,);
+    this.crtajOmotac(kontekst, omotac);
+    console.log("gotovo")
+  }
+  pokreniGrahamScan(): void {
+    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+    const kontekst = canvasEl.getContext('2d');
+    const omotac = this.grahamovAlgoritam(this.tacke);
+    this.crtajOmotac(kontekst, omotac);
+    console.log("gotovo")
+  }
   jeSuprotnoOdSata(p1: { x: number; y: number }, p2: { x: number; y: number }, p3: { x: number; y: number }): boolean {
     const vektorskiProizvod = (p2.x - p1.x) * (p3.y - p1.y) - (p2.y - p1.y) * (p3.x - p1.x);
     return vektorskiProizvod > 0;
 }
 
-crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[]): void {
-    if (!kontekst) {
-        return;
-    }
-    kontekst.strokeStyle = 'red';
-    kontekst.beginPath();
-    kontekst.moveTo(omotac[0].x, omotac[0].y);
+  crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[]): void {
+      if (!kontekst) {
+          return;
+      }
+      kontekst.strokeStyle = 'red';
+      kontekst.beginPath();
+      kontekst.moveTo(omotac[0].x, omotac[0].y);
 
-    for (let i = 1; i < omotac.length; i++) {
-        kontekst.lineTo(omotac[i].x, omotac[i].y);
-    }
+      for (let i = 1; i < omotac.length; i++) {
+          kontekst.lineTo(omotac[i].x, omotac[i].y);
+      }
 
-    kontekst.closePath();
-    kontekst.stroke();
-}
+      kontekst.closePath();
+      kontekst.stroke();
+  }
 
-crtajTacke(kontekst: CanvasRenderingContext2D): void {
-    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
-    kontekst.clearRect(0, 0, canvasEl.width, canvasEl.height);
-    kontekst.lineWidth = 1;
+  crtajTacke(kontekst: CanvasRenderingContext2D): void {
+      const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+      kontekst.clearRect(0, 0, canvasEl.width, canvasEl.height);
+      kontekst.lineWidth = 1;
 
-    this.tacke.forEach((tacka) => {
-        kontekst.beginPath();
-        kontekst.arc(tacka.x, tacka.y, 2, 0, 2 * Math.PI);
-        kontekst.fill();
-        kontekst.stroke();
-    });
-}
+      this.tacke.forEach((tacka) => {
+          kontekst.beginPath();
+          kontekst.arc(tacka.x, tacka.y, 2, 0, 2 * Math.PI);
+          kontekst.fill();
+          kontekst.stroke();
+      });
+  }
 
-generisiTacke(): void {
-    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
-    const kontekst = canvasEl.getContext('2d');
-    const brojTacka = 100;
-    this.tacke = [];
-    for (let i = 0; i < brojTacka; i++) {
-        const x = Math.floor(Math.random() * canvasEl.width);
-        const y = Math.floor(Math.random() * canvasEl.height);
-        this.tacke.push({ x, y });
-    }
-    if (kontekst) {
-        this.crtajTacke(kontekst);
-    }
-}
+  generisiTacke(): void {
+      const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+      const kontekst = canvasEl.getContext('2d');
+      const brojTacka = 100000;
+      this.tacke = [];
+      for (let i = 0; i < brojTacka; i++) {
+          const x = Math.floor(Math.random() * canvasEl.width);
+          const y = Math.floor(Math.random() * canvasEl.height);
+          this.tacke.push({ x, y });
+      }
+      if (kontekst) {
+          this.crtajTacke(kontekst);
+      }
+  }
 
 }
