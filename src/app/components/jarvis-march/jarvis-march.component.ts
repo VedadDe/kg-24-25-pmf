@@ -39,10 +39,24 @@ export class JarvisMarchComponent {
     this.generisaniOmotači = true
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    let omotac = this.grahamovAlgoritam(this.tacke)
-    this.crtajOmotac(kontekst, omotac)
-    if (this.tacke.length <= 3)
-      return
+
+    /*
+    Sve dok nisu ostale 3 tacke u nizu tacaka na kanvasu, pronalazi se omotac i crta se, on se onda dodaje u niz omotaca, te se onda uz pomoc Set-a, map, filter i has
+    niz tacke azurira tako da sada taj niz sadrzi sve tacke osim onih koje su tacke omotaca u ovom koraku.
+    */
+
+    while (this.tacke.length > 3) {
+      let omotac = this.grahamovAlgoritam(this.tacke)
+      this.omotaci.push(omotac)
+      let omotacSet = new Set(omotac.map(tacka => `${tacka.x},${tacka.y}`))
+      this.crtajOmotac(kontekst, omotac)
+
+      this.tacke = this.tacke.filter(tacka => !omotacSet.has(`${tacka.x},${tacka.y}`))
+
+
+    }
+
+
 
 
 
@@ -53,14 +67,54 @@ export class JarvisMarchComponent {
   provjeraTacke(point: { x: number; y: number }): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    
-    //
-    //this.crtajOmotac(kontekst, omotac)
+
+    this.crtajTacku(kontekst, point)
+
+    console.log('usao u provjeru tacke')
+    console.log(this.omotaci)
+
+    /* 
+    Prolazimo kroz listu omotaca od najmanjeg ka najvecem i provjeravamo da li se tacka nalazi unutar omotaca uz pomoc funkcije tackaUOmotacu.
+    Ako tacka nije unutar trenutnog omotaca bojimo ga u zuto
+    */
+    for (let i = this.omotaci.length-1; i > -1; i--) {
+      console.log('trenutni omotac ', this.omotaci[i])
+      if (!this.tackaUOmotacu(point, this.omotaci[i])) {
+        this.crtajOmotacZuti(kontekst, this.omotaci[i])
+        console.log('tacka NIJE u ', i, 'omotacu')
+      }
+        
+    }
   }
 
+  /*
+  Prolazimo kroz dati omotac i metodom orijentacije ustanovljavamo da li je tacka unutar omotaca
+  */
   tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
-   
-    return true
+    let zadanaOrijentacija = this.orijentacija(hull[0], hull[1], point)
+    console.log('Ispitujem da li je tacka ', point, 'u omotacu ', hull)
+
+    console.log('zadana orijentacija je ', zadanaOrijentacija)
+
+    for (let i = 1; i < hull.length-2; i++) {
+      let trenutna = hull[i]
+      let sljedeca = hull[i+1]
+
+      let trenutnaOrijentacija = this.orijentacija(trenutna, sljedeca, point)
+      console.log('trenutna orijentacija je ', trenutnaOrijentacija)
+
+      if ((zadanaOrijentacija > 0 && trenutnaOrijentacija < 0) ||
+          (zadanaOrijentacija < 0 && trenutnaOrijentacija > 0))
+          return false;
+    }
+
+    return ((zadanaOrijentacija > 0 && this.orijentacija(hull[hull.length-1], hull[0], point) > 0) ||
+            (zadanaOrijentacija < 0 && this.orijentacija(hull[hull.length-1], hull[0], point) < 0))
+  }
+
+  //Koristimo ugao izmedju tri tacke da ustanovimo orijentaciju
+  orijentacija(tacka1: { x: number; y: number }, tacka2: { x: number; y: number }, tacka3: { x: number; y: number }): number {
+    return (tacka2.y - tacka1.y) * (tacka3.x - tacka2.x) - (tacka2.x - tacka1.x) * (tacka3.y - tacka2.y);
   }
 
   crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
@@ -73,6 +127,27 @@ export class JarvisMarchComponent {
     }
     kontekst.closePath();
     kontekst.stroke();
+  }
+
+  crtajOmotacZuti(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'yellow'): void {
+    if (!kontekst) return;
+    kontekst.strokeStyle = color;
+    kontekst.lineWidth = 5
+    kontekst.beginPath();
+    kontekst.moveTo(omotac[0].x, omotac[0].y);
+    for (let i = 1; i < omotac.length; i++) {
+      kontekst.lineTo(omotac[i].x, omotac[i].y);
+    }
+    kontekst.closePath();
+    kontekst.stroke();
+  }
+
+  crtajTacku(kontekst: CanvasRenderingContext2D | null, point: { x: number; y: number }): void {
+      if (!kontekst) return;
+      kontekst.beginPath();
+      kontekst.arc(point.x, point.y, 2, 0, 2 * Math.PI);
+      kontekst.fill();
+      kontekst.stroke();
   }
 
 
