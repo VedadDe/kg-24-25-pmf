@@ -34,18 +34,26 @@ export class JarvisMarchComponent {
     });
   }
 
-  // DivideIntoConvex: kreiranje omotača, trenutno generise samo jedan omotač
+  // u niz omotaci smjesta sve omotace od veceg ka manjem
   DivideIntoConvex(): void {
     this.generisaniOmotači = true
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    let omotac = this.grahamovAlgoritam(this.tacke)
-    this.crtajOmotac(kontekst, omotac)
-    if (this.tacke.length <= 3)
-      return
 
 
+    // najmanji omotac se moze napraviti sa 3 tacke (trougao) pa sve dok postoje
+    // tri tacke koje ne pripadaju nekom od omotaca prave se novi omotaci
+    while (this.tacke.length >= 3) {
+      
+      // grahamAlgoritam modifikovan tako da u nizu this.tacke ostaju samo 
+      // tacke koje nisu iskoristene u nekom od omotaca
+      let omotac = this.grahamovAlgoritam(this.tacke) // O(n^2)
+      this.omotaci.push(omotac)
+      this.crtajOmotac(kontekst, omotac)
+    }
 
+    // ostatak tacaka nije u omotacima tako da ih vise ne posmatramo (nije neophodno)
+    this.tacke = []
 
   }
 
@@ -53,15 +61,101 @@ export class JarvisMarchComponent {
   provjeraTacke(point: { x: number; y: number }): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
+
+    this.binarnaPretragaOmotaca(point) 
     
-    //
-    //this.crtajOmotac(kontekst, omotac)
+  }
+  
+  // binarna pretraga omotaca koji su poredani od veceg ka manjem
+  // sama pretraga po nizu omotaci je O(log(broj_omotaca)) dok je funkcija tackaUOmotacu
+  // takodjer implementirana kao binarna pretraga - O(log(broj_tacaka_omotaca)
+  // ukupna kompleksnost funkcije binarnaPretragaOmotaca je O(log^2(n))
+  binarnaPretragaOmotaca(point: {x: number, y: number}) {
+    let lijevo = 0;
+    let desno = this.omotaci.length
+
+    while(desno - lijevo > 1) {
+      let srednjiIndeks = lijevo + Math.floor((desno - lijevo)/2)
+
+      if(this.tackaUOmotacu(point, this.omotaci[srednjiIndeks])) {
+        // tacka se mozda nalazi u omotacu manjem od srednjeg omotaca pa pomijeramo 
+        // lijevu granicu na srednjiIndeks
+        lijevo = srednjiIndeks
+      }
+      else {
+        // moguce da se nalazi samo u vecim omotacima pa pomijeramo
+        // desnu granicu na srednjiIndeks
+        desno = srednjiIndeks
+      }
+    }
+    //console.log("lijevo ", lijevo, "desno ", desno)
+
+    if(lijevo === 0) { // treba provjeriti da li se uopste nalazi u najvecem omotacu
+      if(this.tackaUOmotacu(point, this.omotaci[0])) {
+        // obojati samo najveci omotac
+        const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+        const kontekst = canvasEl.getContext('2d');
+        this.crtajOmotac(kontekst, this.omotaci[0], 'yellow')
+      }
+      // inace se ne nalazi niti u jednom
+
+    }
+    else {
+      // treba obojati od lijevog omotaca pa sve manje indekse
+      const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+      const kontekst = canvasEl.getContext('2d');
+      for(let i = 0; i<=lijevo; i++) {
+        this.crtajOmotac(kontekst, this.omotaci[i], 'yellow')
+      }
+    }
   }
 
-  tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
-   
-    return true
+  racunajPovrsinuTrokuta(p1: {x: number, y:number}, p2: {x: number, y:number}, p3: {x: number, y:number}) {
+    return Math.abs((p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2);
   }
+  
+  jeLiTackaUnutarTrokuta(a: {x: number, y:number}, b: {x: number, y:number}, c: {x: number, y:number}, p: {x: number, y:number}) {
+    // Izračunaj površinu trokuta koju čini tačka i svaki rub trokuta
+    const povrsina1 = this.racunajPovrsinuTrokuta(p, a, b);
+    const povrsina2 = this.racunajPovrsinuTrokuta(p, b, c);
+    const povrsina3 = this.racunajPovrsinuTrokuta(p, c, a);
+  
+    // Izračunaj ukupnu površinu trokuta
+    const ukupnaPovrsina = this.racunajPovrsinuTrokuta(a, b, c);
+  
+    // Provjeri da li je zbir površina trokuta koje čini tačka i svaki rub jednak ukupnoj površini trokuta
+    return (povrsina1 + povrsina2 + povrsina3) - ukupnaPovrsina<0.001;
+  }
+
+
+
+  tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
+    
+    // binarna pretraga da li se tacka nalazi u konveksnom omotacu - O(log(broj_tacaka_omotaca))
+    // na kraju pretrage ostanemo sa samo 3 tacke nakon cega odredjujemo da li se tacka 
+    // nalazi u trouglu koje obrazuju te tri tacke te na osnovu toga odredjujemo da li je tacka u
+    // posmatranom poligonu ili ne
+    while (hull.length > 3) {
+        let srednjiIndeks = Math.floor(hull.length / 2);
+        
+        if (this.vektorskiProizvod(hull[0], hull[srednjiIndeks], point) <= 0) {
+            console.log("Pozitivna orijentacija");
+            // potrebno posmatrati niz od 0 do srednjiIndeks
+            hull = hull.slice(0, srednjiIndeks + 1);
+        } else {
+            console.log("Negativna orijentacija");
+            // potrebno posmatrati niz koji se sastoji od hull[0] te svih tacaka od srednjiIndeks pa nadalje
+            hull = [hull[0]].concat(hull.slice(srednjiIndeks));
+        }
+    }
+
+    // Provjeri da li je tačka unutar trougla definisanog sa tri preostale tačke u hull
+    // funkcije uzete iz point-inside-triangle
+    let uTrouglu = this.jeLiTackaUnutarTrokuta(hull[0], hull[1], hull[2], point);
+   
+    return uTrouglu;
+}
+
 
   crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
     if (!kontekst) return;
@@ -144,6 +238,7 @@ export class JarvisMarchComponent {
 
   grahamovAlgoritam(tacke: { x: number; y: number }[]): { x: number; y: number }[] {
     let najniziIndeks = 0;
+    let ostaleTacke: { x: number; y: number }[] = [] // cuva sve tacke koje nisu na omotacu i njih smjesta u niz tacke
     for (let i = 1; i < tacke.length; i++) {
       if (tacke[i].y < tacke[najniziIndeks].y || (tacke[i].y === tacke[najniziIndeks].y && tacke[i].x < tacke[najniziIndeks].x)) {
         najniziIndeks = i;
@@ -168,11 +263,13 @@ export class JarvisMarchComponent {
                 tacke[i]
             ) <= 0
         ) {
-            omotac.pop();
+            ostaleTacke.push(omotac.pop() as { x: number; y: number });
         }
         omotac.push(tacke[i]); 
     }
 
+    this.tacke = ostaleTacke
+    
     return omotac;
   }
 
@@ -181,6 +278,7 @@ export class JarvisMarchComponent {
   
   
   vektorskiProizvod(o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
+    console.log(o, a, b)
     return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
   }
 
