@@ -6,10 +6,10 @@ import { Component, ElementRef, ViewChild } from '@angular/core';
   styleUrls: ['./jarvis-march.component.scss']
 })
 export class JarvisMarchComponent {
-  @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>; 
+  @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>;
   tacke: { x: number; y: number }[] = [];
-  omotaci: { x: number; y: number }[][] = []; 
-  generisaniOmotači: boolean = false;  // Flag za provjeru da su omotači generisani, nakon kliknutog dugmeta za poziv DivideIntoConvex postavlja se na true 
+  omotaci: { x: number; y: number }[][] = [];
+  generisaniOmotači: boolean = false;  // Flag za provjeru da su omotači generisani, nakon kliknutog dugmeta za poziv DivideIntoConvex postavlja se na true
 
   ngOnInit(): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
@@ -39,28 +39,64 @@ export class JarvisMarchComponent {
     this.generisaniOmotači = true
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    let omotac = this.grahamovAlgoritam(this.tacke)
-    this.crtajOmotac(kontekst, omotac)
-    if (this.tacke.length <= 3)
-      return
 
 
+    // Kopiranje tacaka u lokalni niz koji cemo koristiti za iteraciju
+    let preostaleTacke = [...this.tacke];
 
+    // Iterativno pronalazenje konveksnih omotaca
+    while (preostaleTacke.length > 3) {
+      // Pronalazi trenutni najveci omotac iz preostalih tacaka
+      const omotac = this.grahamovAlgoritam(preostaleTacke);
+      this.omotaci.push(omotac);  // Dodaje trenutni omotač u niz omotača
+
+      // Crta trenutni omotac
+      this.crtajOmotac(kontekst, omotac);
+
+      // Uklanja tacke omotaca iz preostalih tacaka
+      preostaleTacke = preostaleTacke.filter(pt => !omotac.some(ot => ot.x === pt.x && ot.y === pt.y));
+    }
+
+    // Ako ostanu tri tačke ili manje, dodajemo ih kao posljednji omotac
+    if (preostaleTacke.length > 0) {
+      this.omotaci.push(preostaleTacke);
+      this.crtajOmotac(kontekst, preostaleTacke);
+    }
 
   }
 
-  // provjeraTacke: 
+  // provjeraTacke:
   provjeraTacke(point: { x: number; y: number }): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    
-    //
-    //this.crtajOmotac(kontekst, omotac)
+
+    if (!kontekst) return;
+    // Crtanje tacke zelenom bojom
+    kontekst.fillStyle = 'green';
+    kontekst.beginPath();
+    kontekst.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+    kontekst.fill();
+
+
+    // Iterira kroz sve generisane omotace
+    this.omotaci.forEach(omotac => {
+      const sadrziTacku = this.tackaUOmotacu(point, omotac);
+
+      // Boji omotac zutom bojom ako tacka nije unutar njega
+      this.crtajOmotac(kontekst, omotac, sadrziTacku ? 'red' : 'yellow');
+    });
+
   }
 
   tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
-   
-    return true
+
+    for (let i = 0; i < hull.length; i++) {
+      const next = (i + 1) % hull.length;
+      if (this.vektorskiProizvod(hull[i], hull[next], point) < 0) {
+        return false; // Tacka je izvan omotaca
+      }
+    }
+    return true //Tacka je unutar omotaca
   }
 
   crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
@@ -77,12 +113,12 @@ export class JarvisMarchComponent {
 
 
   //invertovan koordinatni sistem, kako bi se poklapao sa tradicionalnim pogledom
-//   jarvisMarch(tacke: { x: number; y: number }[], canvasHeight: number): { x: number; y: number }[] { 
+//   jarvisMarch(tacke: { x: number; y: number }[], canvasHeight: number): { x: number; y: number }[] {
 //     const transformedPoints = tacke.map(point => ({ x: point.x, y: canvasHeight - point.y }));
 //     let najniziIndeks = 0;
 //     for (let i = 1; i < transformedPoints.length; i++) {
 //       if (
-//         transformedPoints[i].y < transformedPoints[najniziIndeks].y || 
+//         transformedPoints[i].y < transformedPoints[najniziIndeks].y ||
 //         (transformedPoints[i].y === transformedPoints[najniziIndeks].y && transformedPoints[i].x < transformedPoints[najniziIndeks].x)
 //       ) {
 //         najniziIndeks = i;
@@ -92,14 +128,14 @@ export class JarvisMarchComponent {
 
 
 //     const omotac: { x: number; y: number }[] = [transformedPoints[najniziIndeks]];
-  
+
 //     let trenutnaTacka = najniziIndeks;
 //     let krajnjaTacka: number;
 //     do {
 //       krajnjaTacka = 0;
 //       for (let i = 1; i < transformedPoints.length; i++) {
 //         if (
-//           trenutnaTacka === krajnjaTacka || 
+//           trenutnaTacka === krajnjaTacka ||
 //           this.jeSuprotnoOdSata(transformedPoints[trenutnaTacka], transformedPoints[i], transformedPoints[krajnjaTacka])
 //         ) {
 //           krajnjaTacka = i;
@@ -122,7 +158,7 @@ export class JarvisMarchComponent {
     }
     console.log(najniziIndeks)
     const omotac: { x: number; y: number }[] = [tacke[najniziIndeks]];
-  
+
     let trenutnaTacka = najniziIndeks;
     let krajnjaTacka: number;
     do {
@@ -137,7 +173,7 @@ export class JarvisMarchComponent {
       trenutnaTacka = krajnjaTacka;
       console.log(trenutnaTacka, najniziIndeks, "test2")
     } while (trenutnaTacka !== najniziIndeks);
-  
+
      return omotac;
   }
 
@@ -150,13 +186,13 @@ export class JarvisMarchComponent {
       }
     }
     const omotac: { x: number; y: number }[] = [tacke[najniziIndeks]];
-    
+
     let najniziIndeksTacka = tacke[najniziIndeks]
-    tacke.splice(najniziIndeks, 1); 
+    tacke.splice(najniziIndeks, 1);
 
     tacke.sort((a, b) => this.porediPolarniUgao(najniziIndeksTacka, a, b));
     omotac.push(tacke[0])
-    tacke.splice(0, 1); 
+    tacke.splice(0, 1);
 
     for (let i = 0; i < tacke.length; i++) {
 
@@ -170,7 +206,7 @@ export class JarvisMarchComponent {
         ) {
             omotac.pop();
         }
-        omotac.push(tacke[i]); 
+        omotac.push(tacke[i]);
     }
 
     return omotac;
@@ -178,8 +214,8 @@ export class JarvisMarchComponent {
 
 
 
-  
-  
+
+
   vektorskiProizvod(o: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }): number {
     return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
   }
@@ -230,7 +266,7 @@ export class JarvisMarchComponent {
   generisiTacke(): void {
       const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
       const kontekst = canvasEl.getContext('2d');
-      const brojTacka = 100000;
+      const brojTacka = 100;
       this.tacke = [];
       for (let i = 0; i < brojTacka; i++) {
           const x = Math.floor(Math.random() * canvasEl.width);
