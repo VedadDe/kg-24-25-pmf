@@ -1,0 +1,15 @@
+    <h4>
+        Broj tačaka se može dodati ispod ove poruke, gdje stoji broj tri koji označava defaultni i minimalni broj tačaka. Potom je potrebno kliknuti na dugme "Kreiraj poligon". Ukoliko lijevo od broja u dugmetu piše "Segment", to znači da možemo generisati segment. Nakon dva klika generišemo segment na ekranu, nakon čega se javlja poruka u kakvom je odnosu sa poligonom. Konačno, na dugme "Ispitaj orijentaciju poligona" javlja se poruka da li je poligon u smjeru kazaljke na satu ili obrnuto. Na dugme "Generiši 1000 tačaka i provjeri koje su u poligonu" generišu se nasumično tačke i provjerava se koje od njih su unutar a koje van poligona. One unutar boje se crvenom, a vanjske plavom bojom.
+    </h4>
+    <div class="container">
+        <button (click)="segmentIliTacka()" style="padding: 5px; margin: 2px;">
+        {{ segment ? 'Segment' : 'Tačka' }}
+        </button>
+        <input [(ngModel)]="n" type="number" min="3" placeholder="Unesite broj tačaka (n)" style="padding: 5px; margin: 2px" />
+        <button (click)="generisiPoligon()" style="padding: 5px; margin: 2px">Kreiraj poligon</button>
+        <button (click)="orjentacijaPoligona()" style="padding: 5px; margin: 2px">Ispitaj orijentaciju poligona</button>
+        <button (click)="generisiIIspitajNTacaka()" style="padding: 5px; margin: 2px">Generiši niz 1000 tačaka i provjeri koje su u poligonu</button>
+        <button (click)="triangulirajPoligon()" style="padding: 5px; margin: 2px">Triangulacija poligona</button>
+        <canvas #polygonCanvas style="border: 1px solid black; cursor: pointer;" (click)="onCanvasClick($event)"></canvas>
+    </div>
+    
