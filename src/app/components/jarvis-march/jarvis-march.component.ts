@@ -58,11 +58,15 @@ export class JarvisMarchComponent {
     }
 
     // Ako ostanu tri tačke ili manje, dodajemo ih kao posljednji omotac
-    if (preostaleTacke.length > 0) {
-      this.omotaci.push(preostaleTacke);
-      this.crtajOmotac(kontekst, preostaleTacke);
-    }
+    //if (preostaleTacke.length === 3) {
+    //  this.omotaci.push(preostaleTacke);
+     // this.crtajOmotac(kontekst, preostaleTacke);
+    //}
 
+    // Ako ostanu tri tačke ili manje, ne radimo nista
+    if (preostaleTacke.length <= 3) {
+      return;
+    }
   }
 
   // provjeraTacke:
