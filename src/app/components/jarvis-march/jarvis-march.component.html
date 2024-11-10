@@ -1,0 +1,17 @@
+<h4>
+    Tačke se mogu dodati klikom na čitav (bijeli) ekran (odmah ispod ove upute). 
+    Potom je potrebno "skrolati" na dno i pokrenuti jedan od dva algoritma na dugme. 
+    Tačke (100000) se mogu generisati na dugme ispod. 
+    Prije ponovnog pokretanja je preporučeno uraditi "refresh" stranice.
+</h4>
+
+<canvas #canvas></canvas>
+
+<button (click)="pokreniJarvisMarch()">Pokreni Jarvisov algoritam</button>
+<button (click)="pokreniGrahamScan()">Pokreni Graham scan</button>
+<button (click)="generisiTacke()">Generisi 100000 tačaka</button>
+<button (click)="generisiTacke2()">Generisi 60 tačaka</button>
+
+<!-- New buttons for DivideIntoConvex and CheckPoint -->
+<button (click)="DivideIntoConvex()">Divide into Convex Hulls</button>
+

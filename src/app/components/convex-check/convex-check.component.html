@@ -1,0 +1,11 @@
+<h4>Tačke se mogu dodati ispod ove poruke, klikom na platno unutar pravougaonika. Nakon četiri uzastopna klika javlja se poruka da li je kreirani četverougao konveksan. Na dugme očisti počinje se sa novim unosom.
+</h4>
+<div>
+    <canvas #canvas (click)="naKlikPlatna($event)" style="border: 1px solid black;" width="400" height="400"></canvas>
+    <button (click)="ocisticanvas()">Očisti</button>
+  </div>
+  
+  <p *ngIf="jeKonveksan !== undefined">
+    Četverougao {{ jeKonveksan ? 'je konveksan' : 'nije konveksan' }}
+  </p>
+      
