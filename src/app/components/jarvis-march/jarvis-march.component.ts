@@ -33,34 +33,56 @@ export class JarvisMarchComponent {
       }
     });
   }
-
   // DivideIntoConvex: kreiranje omotača, trenutno generise samo jedan omotač
   DivideIntoConvex(): void {
-    this.generisaniOmotači = true
+    this.generisaniOmotači = true; 
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
-    let omotac = this.grahamovAlgoritam(this.tacke)
-    this.crtajOmotac(kontekst, omotac)
-    if (this.tacke.length <= 3)
-      return
 
+    let preostaleTacke = this.tacke;
 
+    while (preostaleTacke.length > 3) {
+        // Pronalazimo omotač za trenutni skup preostalih tacaka
+        let omotac = this.grahamovAlgoritam(preostaleTacke);
+        this.omotaci.push(omotac);  // Dodajemo novi omotac u listu omotaca
 
+        // Uklanjamo tacke koje su dio omotaca iz preostalih tacaka
+        preostaleTacke = preostaleTacke.filter(tacka => !omotac.includes(tacka));
 
+        // Crtamo trenutni omotac na platnu
+        this.crtajOmotac(kontekst, omotac, 'blue');
+    }
   }
 
-  // provjeraTacke: 
   provjeraTacke(point: { x: number; y: number }): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
     
-    //
-    //this.crtajOmotac(kontekst, omotac)
+    this.omotaci.forEach(omotac => {
+        let tackaUOmotacu = this.tackaUOmotacu(point, omotac);
+        let boja = tackaUOmotacu ? 'blue' : 'yellow';  // ako je u omotacu, ostaje plava, inace zuta
+        this.crtajOmotac(kontekst, omotac, boja);
+    });
   }
 
-  tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
-   
-    return true
+  tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean { 
+    let presjeci = 0;
+
+    for (let i = 0; i < hull.length; i++) {
+        let a = hull[i];
+        let b = hull[(i + 1) % hull.length];
+
+        // Provjerava da li se tacka nalazi na istom y-nivou kao ivica ab i unutar x-opsega ivice
+        if (
+            ((a.y > point.y) !== (b.y > point.y)) &&  // Provjera da li ivica presjeca horizontalnu pravu iz tacke
+            (point.x < ((b.x - a.x) * (point.y - a.y)) / (b.y - a.y) + a.x) // Provjerava da li je tacka lijevo od ivice
+        ) {
+            presjeci++; 
+        }
+    }
+
+    // tacka je unutar omotaca ako je broj presjeka neparan
+    return presjeci % 2 === 1;
   }
 
   crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
