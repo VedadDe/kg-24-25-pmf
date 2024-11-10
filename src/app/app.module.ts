@@ -13,6 +13,7 @@ import { SegmentIntersectionComponent } from './components/segment-intersection/
 import { PointOrientationComponent } from './components/point-orientation/point-orientation.component';
 import { ConvexCheckComponent } from './components/convex-check/convex-check.component';
 import { JarvisMarchComponent } from './components/jarvis-march/jarvis-march.component';
+import { TriangulationComponent } from './components/triangulation/triangulation.component';
 
 @NgModule({
   declarations: [
@@ -25,7 +26,8 @@ import { JarvisMarchComponent } from './components/jarvis-march/jarvis-march.com
     SegmentIntersectionComponent,
     PointOrientationComponent,
     ConvexCheckComponent,
-    JarvisMarchComponent
+    JarvisMarchComponent,
+    TriangulationComponent
   ],
   imports: [
     BrowserModule,
