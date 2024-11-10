@@ -1,15 +1,35 @@
 import { Component, ElementRef, ViewChild } from '@angular/core';
 
+const epsilon: number = 1e-9;
+
+function orijentacija(A: { x: number; y: number }, B: { x: number; y: number }, C: { x: number; y: number }): number {
+  const povrsina = A.x * (B.y - C.y) + B.x * (C.y - A.y) + C.x * (A.y - B.y);
+  if(Math.abs(povrsina) < epsilon) {
+    return 0;
+  
+  } else if(povrsina > 0) {
+    return -1;
+  
+  } else {
+    return 1;
+  }
+}
+
+function tackaUnutarTrougla(A: { x: number; y: number }, B: { x: number; y: number }, C: { x: number; y: number }, point: {x: number; y: number}):boolean {
+  return orijentacija(A, B, point) == orijentacija(B, C, point) && orijentacija(A, B, point) == orijentacija(C, A, point);
+}
+
 @Component({
   selector: 'app-jarvis-march',
   templateUrl: './jarvis-march.component.html',
   styleUrls: ['./jarvis-march.component.scss']
 })
+
 export class JarvisMarchComponent {
   @ViewChild('canvas', { static: true }) canvas!: ElementRef<HTMLCanvasElement>; 
   tacke: { x: number; y: number }[] = [];
   omotaci: { x: number; y: number }[][] = []; 
-  generisaniOmotači: boolean = false;  // Flag za provjeru da su omotači generisani, nakon kliknutog dugmeta za poziv DivideIntoConvex postavlja se na true 
+  generisaniOmotaci: boolean = false;  // Flag za provjeru da su omotači generisani, nakon kliknutog dugmeta za poziv DivideIntoConvex postavlja se na true 
 
   ngOnInit(): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
@@ -21,9 +41,17 @@ export class JarvisMarchComponent {
       const x = dogadjaj.clientX - pravougaonik.left;
       const y = dogadjaj.clientY - pravougaonik.top;
 
-      if (this.generisaniOmotači) {
+      if (this.generisaniOmotaci) {
         // Provjera za tačku nakon generisanja omotača
         this.provjeraTacke({ x, y });
+        if(kontekst) {
+          kontekst.beginPath();
+          kontekst.fillStyle = "blue";
+          kontekst.arc(x, y, 5, 0, 2 * Math.PI);
+          kontekst.fill();
+          kontekst.stroke();
+          kontekst.fillStyle = "black";
+        }
       } else {
         // dodavanje tački ako omotači nisu generisani
         this.tacke.push({ x, y });
@@ -34,33 +62,117 @@ export class JarvisMarchComponent {
     });
   }
 
-  // DivideIntoConvex: kreiranje omotača, trenutno generise samo jedan omotač
-  DivideIntoConvex(): void {
-    this.generisaniOmotači = true
-    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
-    const kontekst = canvasEl.getContext('2d');
-    let omotac = this.grahamovAlgoritam(this.tacke)
-    this.crtajOmotac(kontekst, omotac)
-    if (this.tacke.length <= 3)
-      return
-
-
-
-
+  ocistiCanvas(): void {
+    this.tacke = [];
+    this.omotaci = []
+    this.generisaniOmotaci = false;
+    const canvas = this.canvas.nativeElement;
+    const kontekst = canvas.getContext('2d');
+    if(kontekst)
+      kontekst.clearRect(0, 0, canvas.width, canvas.height);
   }
 
-  // provjeraTacke: 
+  // DivideIntoConvex: kreiranje omotača, trenutno generise samo jedan omotač
+  /*
+    Vremenska složenost metode DivideIntoConvex je O(n²). Sve dok je broj tačaka
+    koje nismo dodali na neki od omotača veći od 3 pozivamo jarvisMarch.
+
+    Komentar: Iako Grahamov algoritam ima vremensku složenost O(n*log(n)), Jarvisov
+    algoritam daje bolju vremensku složenost za metodu DivideIntoConvex (vremenska složenost bi bila O(n²*log(n)) ukoliko bi se koristio Graham scan). 
+  */
+  DivideIntoConvex(): void {
+    this.generisaniOmotaci = true
+    const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
+    const kontekst = canvasEl.getContext('2d');
+
+    while(this.tacke.length > 3) {
+      let omotac = this.jarvisMarch(this.tacke);
+      this.omotaci.push(omotac);
+      this.tacke = this.tacke.filter(tacka => !omotac.includes(tacka));
+      this.crtajOmotac(kontekst, omotac);
+    }
+  }
+
+  // provjeraTacke:
+  /*
+    Radimo binarnu pretragu nad nizom omotaci, kako bismo pronašli
+    najveći konveksni omotač koji ne sadrži zadanu tačku. Vremenska složenost potrebna
+    za pronalaženje takvog omotača je O(log²(n)) (jer metoda tackaUOmotacu ima vremensku složenost O(log(n)))
+
+    Bojenje svih omotača koji ne sadrže zadanu tačku ima u najgorem slučaju vremensku složenost O(n).
+  */
   provjeraTacke(point: { x: number; y: number }): void {
     const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
     const kontekst = canvasEl.getContext('2d');
+    let lijeviKonveksni = 0, desniKonveksni = this.omotaci.length - 1;
     
-    //
-    //this.crtajOmotac(kontekst, omotac)
+    while(lijeviKonveksni != desniKonveksni) {
+      let sredina = lijeviKonveksni + Math.floor((desniKonveksni - lijeviKonveksni)/2);
+      
+      if(this.tackaUOmotacu(point, this.omotaci[sredina])) {
+        lijeviKonveksni = sredina + 1;
+      }
+      else {
+        desniKonveksni = sredina;
+      }
+    }
+
+    if(lijeviKonveksni == this.omotaci.length-1 && this.tackaUOmotacu(point, this.omotaci[lijeviKonveksni])) {
+      console.log("Svi omotaci sadrze zFadanu tacku!")
+    }
+    else {
+      for(let i = lijeviKonveksni; i < this.omotaci.length; i++) {
+        this.crtajOmotac(kontekst, this.omotaci[i], "yellow");
+      }
+    }
+
   }
 
+
   tackaUOmotacu(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
-   
-    return true
+  /*
+    Ukoliko se zadata tačka nalazi u omotaču, onda postoji trougao sa vrhovima (hull[0], hull[i], hull[i+1]) koji sadrži tu tačku.
+    Koristimo binarnu pretragu kako bi pronašli takav trougao.
+    Vremenska složenost ove metode je O(log(h)), pri čemu je h broj tačaka na omotaču. 
+  */
+    
+    if(hull.length < 3) {
+      return false;
+    }
+
+    let pocetak = 1, kraj = hull.length - 1;
+
+    while(kraj - pocetak > 1) {
+      let sredina = pocetak + Math.floor((kraj - pocetak)/2);
+
+      if(orijentacija(hull[0], hull[sredina], point) > 0) {
+        // ovo je slučaj kada se tačka point nalazi sa lijeve strane prave određene tačkama hull[0] i hull[sredina]
+        kraj = sredina; // pomjeramo kraj jer je konvekni omotač negativno orijentisan
+      }
+      else {
+        pocetak = sredina;
+      }
+    }
+
+    return tackaUnutarTrougla(hull[0], hull[pocetak], hull[kraj], point);
+  }
+
+
+
+  tackaUOmotacu2(point: { x: number; y: number }, hull: { x: number; y: number }[]): boolean {
+    if(hull.length < 3) {
+      return false;
+    }
+
+    const orijentacijaKonveksnog = orijentacija(hull[0], hull[1], point)
+
+    for(let i = 1; i < hull.length; i++) {
+      if(orijentacijaKonveksnog != orijentacija(hull[i], hull[(i+1) % hull.length], point)) {
+        return false;
+      }
+    }
+
+    return true;
   }
 
   crtajOmotac(kontekst: CanvasRenderingContext2D | null, omotac: { x: number; y: number }[], color: string = 'red'): void {
@@ -68,11 +180,13 @@ export class JarvisMarchComponent {
     kontekst.strokeStyle = color;
     kontekst.beginPath();
     kontekst.moveTo(omotac[0].x, omotac[0].y);
+    kontekst.strokeStyle = color;
     for (let i = 1; i < omotac.length; i++) {
       kontekst.lineTo(omotac[i].x, omotac[i].y);
     }
     kontekst.closePath();
     kontekst.stroke();
+    kontekst.strokeStyle = "black";
   }
 
 
@@ -116,13 +230,13 @@ export class JarvisMarchComponent {
   jarvisMarch(tacke: { x: number; y: number }[]): { x: number; y: number }[] {
     let najniziIndeks = 0;
     for (let i = 1; i < tacke.length; i++) {
-      if (tacke[i].y < tacke[najniziIndeks].y || (tacke[i].y === tacke[najniziIndeks].y && tacke[i].x < tacke[najniziIndeks].x)) {
+      if(tacke[i].y < tacke[najniziIndeks].y || (tacke[i].y === tacke[najniziIndeks].y && tacke[i].x < tacke[najniziIndeks].x)) {
         najniziIndeks = i;
       }
     }
-    console.log(najniziIndeks)
+    console.log("Najnizi indeks je: " + najniziIndeks)
     const omotac: { x: number; y: number }[] = [tacke[najniziIndeks]];
-  
+
     let trenutnaTacka = najniziIndeks;
     let krajnjaTacka: number;
     do {
@@ -133,11 +247,13 @@ export class JarvisMarchComponent {
           krajnjaTacka = i;
         }
       }
-      omotac.push(tacke[krajnjaTacka]);
+
+      if(krajnjaTacka !== najniziIndeks) {
+        omotac.push(tacke[krajnjaTacka]);
+      }
       trenutnaTacka = krajnjaTacka;
       console.log(trenutnaTacka, najniziIndeks, "test2")
     } while (trenutnaTacka !== najniziIndeks);
-  
      return omotac;
   }
 
@@ -230,7 +346,7 @@ export class JarvisMarchComponent {
   generisiTacke(): void {
       const canvasEl: HTMLCanvasElement = this.canvas.nativeElement;
       const kontekst = canvasEl.getContext('2d');
-      const brojTacka = 100000;
+      const brojTacka = 100;
       this.tacke = [];
       for (let i = 0; i < brojTacka; i++) {
           const x = Math.floor(Math.random() * canvasEl.width);
