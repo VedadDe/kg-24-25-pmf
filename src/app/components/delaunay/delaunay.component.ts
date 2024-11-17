@@ -1,211 +1,207 @@
 import { Component, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
 
-interface Point {
+interface Tacka {
   x: number;
   y: number;
 }
 
-interface Triangle {
-  p1: Point;
-  p2: Point;
-  p3: Point;
+interface Trougao {
+  t1: Tacka;
+  t2: Tacka;
+  t3: Tacka;
 }
 
-  @Component({
+@Component({
   selector: 'app-delaunay',
   templateUrl: './delaunay.component.html',
   styleUrls: ['./delaunay.component.scss']
 })
-export class DelaunayComponent implements AfterViewInit { 
+export class DelaunayComponent implements AfterViewInit {
   @ViewChild('canvas', { static: false }) canvasRef!: ElementRef;
-  private ctx!: CanvasRenderingContext2D;
-  private points: Point[] = [];
-  private triangles: Triangle[] = [];
+  private kontekst!: CanvasRenderingContext2D;
+  private tacke: Tacka[] = [];
+  private trouglovi: Trougao[] = [];
 
   ngAfterViewInit() {
-    const canvas = this.canvasRef.nativeElement;
-    this.ctx = canvas.getContext('2d')!;
-    this.draw();
+    const platno = this.canvasRef.nativeElement;
+    this.kontekst = platno.getContext('2d')!;
+    this.crtaj();
   }
-  onCanvasClick(event: MouseEvent) {
-    const rect = this.canvasRef.nativeElement.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+
+  naKlikPlatna(dogadjaj: MouseEvent) {
+    const okvir = this.canvasRef.nativeElement.getBoundingClientRect();
+    const x = dogadjaj.clientX - okvir.left;
+    const y = dogadjaj.clientY - okvir.top;
   
-    const newPoint: Point = { x, y };
-    this.points.push(newPoint);
+    let novaTacka: Tacka = { x, y };
+    this.tacke.push(novaTacka);
   
-    this.triangulate();
-    this.draw();
+    this.triangulacija();
+    this.crtaj();
   }
-  findTriangleSharingEdge(p1: Point, p2: Point, excludingPoint: Point): Triangle | null {
-    for (const triangle of this.triangles) {
-      if ([triangle.p1, triangle.p2, triangle.p3].includes(p1) &&
-          [triangle.p1, triangle.p2, triangle.p3].includes(p2) &&
-          ![triangle.p1, triangle.p2, triangle.p3].includes(excludingPoint)) {
-        return triangle;
+
+  pronadjiTrougaoSaZajednickomIvicom(t1: Tacka, t2: Tacka, iskljucenaTacka: Tacka): Trougao | null {
+    for (let trougao of this.trouglovi) {
+      if ([trougao.t1, trougao.t2, trougao.t3].includes(t1) &&
+          [trougao.t1, trougao.t2, trougao.t3].includes(t2) &&
+          ![trougao.t1, trougao.t2, trougao.t3].includes(iskljucenaTacka)) {
+        return trougao;
       }
     }
     return null;
   }
+
+  provjeriLegalnostIvice(t: Tacka, pocetakIvice: Tacka, krajIvice: Tacka) {
+    // Pronađi trougao suprotan tački t preko ivice
+    let suprotanTrougao = this.pronadjiTrougaoSaZajednickomIvicom(pocetakIvice, krajIvice, t);
+    if (!suprotanTrougao) return;
   
-  checkEdgeLegality(p: Point, edgeStart: Point, edgeEnd: Point) {
-    // Find the triangle opposite to point p across the edge
-    const oppositeTriangle = this.findTriangleSharingEdge(edgeStart, edgeEnd, p);
-    if (!oppositeTriangle) return;
+    // Tačka suprotna ivici u suprotnom trouglu
+    let suprotnaTacka = [suprotanTrougao.t1, suprotanTrougao.t2, suprotanTrougao.t3]
+      .find(tacka => tacka !== pocetakIvice && tacka !== krajIvice);
   
-    // The point opposite to the edge in the opposite triangle
-    const oppositePoint = [oppositeTriangle.p1, oppositeTriangle.p2, oppositeTriangle.p3]
-      .find(pt => pt !== edgeStart && pt !== edgeEnd);
+    if (!suprotnaTacka) return;
   
-    if (!oppositePoint) return;
-  
-    // Check if the edge is illegal
-    if (this.pointInCircumcircle(oppositePoint, { p1: p, p2: edgeStart, p3: edgeEnd })) {
-      // Flip the edge
-      this.triangles = this.triangles.filter(
-        tri => tri !== oppositeTriangle &&
-               ![p, edgeStart, edgeEnd].every(pt => [tri.p1, tri.p2, tri.p3].includes(pt))
+    // Provjera da li je ivica nelegalna
+    if (this.tackaUOpisanomKrugu(suprotnaTacka, { t1: t, t2: pocetakIvice, t3: krajIvice })) {
+      // Flipuj ivicu
+      this.trouglovi = this.trouglovi.filter(
+        trougao => trougao !== suprotanTrougao &&
+                   ![t, pocetakIvice, krajIvice].every(tacka => [trougao.t1, trougao.t2, trougao.t3].includes(tacka))
       );
   
-      // Add the new triangles
-      this.triangles.push({ p1: p, p2: oppositePoint, p3: edgeStart });
-      this.triangles.push({ p1: p, p2: oppositePoint, p3: edgeEnd });
+      // Dodaj nove trouglove
+      this.trouglovi.push({ t1: t, t2: suprotnaTacka, t3: pocetakIvice });
+      this.trouglovi.push({ t1: t, t2: suprotnaTacka, t3: krajIvice });
   
-      // Recursively check the edges
-      this.checkEdgeLegality(p, p, oppositePoint);
-      this.checkEdgeLegality(p, edgeStart, oppositePoint);
-      this.checkEdgeLegality(p, edgeEnd, oppositePoint);
+      // Rekurzivno provjeri ivice
+      this.provjeriLegalnostIvice(t, t, suprotnaTacka);
+      this.provjeriLegalnostIvice(t, pocetakIvice, suprotnaTacka);
+      this.provjeriLegalnostIvice(t, krajIvice, suprotnaTacka);
     }
   }
-  
-  triangulate() {
-    // Step 1: Initialize the super-triangle
-    const superTriangle: Triangle = {
-      p1: { x: -1000, y: -1000 },
-      p2: { x: 3000, y: -1000 },
-      p3: { x: -1000, y: 3000 },
+
+  triangulacija() {
+    // Korak 1: Inicijalizacija super-trougla
+    const superTrougao: Trougao = {
+      t1: { x: -1000, y: -1000 },
+      t2: { x: 3000, y: -1000 },
+      t3: { x: -1000, y: 3000 },
     };
   
-    // Start with the super-triangle
-    this.triangles = [superTriangle];
+    // Početak sa super-trouglom
+    this.trouglovi = [superTrougao];
   
-    // Step 2: Permute the points (you can shuffle the points array)
-    const permutedPoints = this.points.slice(); // Copy the points array
-    // Optionally shuffle the points to get a random permutation
-    // this.shuffleArray(permutedPoints);
+    // Korak 2: Permutacija tačaka (može se promiješati niz tačaka)
+    let permutovaneTacke = this.tacke.slice(); // Kopija niza tačaka
   
-    // Step 3: Insert each point into the triangulation
-    for (const point of permutedPoints) {
-      const badTriangles: Triangle[] = [];
+    // Korak 3: Umetanje svake tačke u triangulaciju
+    for (let tacka of permutovaneTacke) {
+      let losiTrouglovi: Trougao[] = [];
   
-      // Find all triangles that are no longer valid due to the insertion
-      for (const triangle of this.triangles) {
-        if (this.pointInCircumcircle(point, triangle)) {
-          badTriangles.push(triangle);
+      // Pronađi sve trouglove koji više nisu validni zbog umetanja
+      for (let trougao of this.trouglovi) {
+        if (this.tackaUOpisanomKrugu(tacka, trougao)) {
+          losiTrouglovi.push(trougao);
         }
       }
   
-      // Find the boundary of the polygonal hole
-      const polygon: { p1: Point; p2: Point }[] = [];
-      for (const triangle of badTriangles) {
-        const edges = [
-          { p1: triangle.p1, p2: triangle.p2 },
-          { p1: triangle.p2, p2: triangle.p3 },
-          { p1: triangle.p3, p2: triangle.p1 },
+      // Pronađi granicu poligonalne rupe
+      let poligon: { t1: Tacka; t2: Tacka }[] = [];
+      for (let trougao of losiTrouglovi) {
+        let ivice = [
+          { t1: trougao.t1, t2: trougao.t2 },
+          { t1: trougao.t2, t2: trougao.t3 },
+          { t1: trougao.t3, t2: trougao.t1 },
         ];
   
-        for (const edge of edges) {
-          let shared = false;
-          for (const otherTriangle of badTriangles) {
-            if (triangle === otherTriangle) continue;
-            if (this.isSameEdge(edge, { p1: otherTriangle.p1, p2: otherTriangle.p2 }) ||
-                this.isSameEdge(edge, { p1: otherTriangle.p2, p2: otherTriangle.p3 }) ||
-                this.isSameEdge(edge, { p1: otherTriangle.p3, p2: otherTriangle.p1 })) {
-              shared = true;
+        for (let ivica of ivice) {
+          let zajednicka = false;
+          for (let drugiTrougao of losiTrouglovi) {
+            if (trougao === drugiTrougao) continue;
+            if (this.jednakeIvice(ivica, { t1: drugiTrougao.t1, t2: drugiTrougao.t2 }) ||
+                this.jednakeIvice(ivica, { t1: drugiTrougao.t2, t2: drugiTrougao.t3 }) ||
+                this.jednakeIvice(ivica, { t1: drugiTrougao.t3, t2: drugiTrougao.t1 })) {
+              zajednicka = true;
               break;
             }
           }
-          if (!shared) {
-            polygon.push(edge);
+          if (!zajednicka) {
+            poligon.push(ivica);
           }
         }
       }
   
-      // Remove the bad triangles
-      this.triangles = this.triangles.filter(tri => !badTriangles.includes(tri));
+      // Ukloni loše trouglove
+      this.trouglovi = this.trouglovi.filter(trougao => !losiTrouglovi.includes(trougao));
   
-      // Retriangulate the polygonal hole
-      for (const edge of polygon) {
-        const newTriangle: Triangle = {
-          p1: edge.p1,
-          p2: edge.p2,
-          p3: point,
+      // Ponovna triangulacija poligonalne rupe
+      for (let ivica of poligon) {
+        let noviTrougao: Trougao = {
+          t1: ivica.t1,
+          t2: ivica.t2,
+          t3: tacka,
         };
-        this.triangles.push(newTriangle);
+        this.trouglovi.push(noviTrougao);
   
-        // Step 3 II: Check and flip illegal edges
-        this.checkEdgeLegality(point, edge.p1, edge.p2);
+        // Provjeri i flipuj nelegalne ivice
+        this.provjeriLegalnostIvice(tacka, ivica.t1, ivica.t2);
       }
     }
   
-    // Step 4: Remove triangles that share a vertex with the super-triangle
-    this.triangles = this.triangles.filter(triangle => {
-      return ![superTriangle.p1, superTriangle.p2, superTriangle.p3].includes(triangle.p1) &&
-             ![superTriangle.p1, superTriangle.p2, superTriangle.p3].includes(triangle.p2) &&
-             ![superTriangle.p1, superTriangle.p2, superTriangle.p3].includes(triangle.p3);
+    // Korak 4: Ukloni trouglove koji dijele vrhove sa super-trouglom
+    this.trouglovi = this.trouglovi.filter(trougao => {
+      return ![superTrougao.t1, superTrougao.t2, superTrougao.t3].includes(trougao.t1) &&
+             ![superTrougao.t1, superTrougao.t2, superTrougao.t3].includes(trougao.t2) &&
+             ![superTrougao.t1, superTrougao.t2, superTrougao.t3].includes(trougao.t3);
     });
   }
+
+  tackaUOpisanomKrugu(tacka: Tacka, trougao: Trougao): boolean {
+    let { t1, t2, t3 } = trougao;
   
+    // Metoda determinanta matrice
+    let ax = t1.x - tacka.x;
+    let ay = t1.y - tacka.y;
+    let bx = t2.x - tacka.x;
+    let by = t2.y - tacka.y;
+    let cx = t3.x - tacka.x;
+    let cy = t3.y - tacka.y;
   
-  pointInCircumcircle(point: Point, triangle: Triangle): boolean {
-    const { p1, p2, p3 } = triangle;
-  
-    // Matrix determinant method
-    const ax = p1.x - point.x;
-    const ay = p1.y - point.y;
-    const bx = p2.x - point.x;
-    const by = p2.y - point.y;
-    const cx = p3.x - point.x;
-    const cy = p3.y - point.y;
-  
-    const det = (ax * (by * (cx * cx + cy * cy) - cy * (bx * bx + by * by))
+    let determinanta = (ax * (by * (cx * cx + cy * cy) - cy * (bx * bx + by * by))
                - ay * (bx * (cx * cx + cy * cy) - cx * (bx * bx + by * by))
                + (ax * ax + ay * ay) * (bx * cy - cx * by));
   
-    return det > 0;
+    return determinanta > 0;
   }
-  
 
-  isSameEdge(edge1: { p1: Point; p2: Point }, edge2: { p1: Point; p2: Point }): boolean {
+  jednakeIvice(ivica1: { t1: Tacka; t2: Tacka }, ivica2: { t1: Tacka; t2: Tacka }): boolean {
     return (
-      (edge1.p1.x === edge2.p1.x && edge1.p1.y === edge2.p1.y && edge1.p2.x === edge2.p2.x && edge1.p2.y === edge2.p2.y) ||
-      (edge1.p1.x === edge2.p2.x && edge1.p1.y === edge2.p2.y && edge1.p2.x === edge2.p1.x && edge1.p2.y === edge2.p1.y)
+      (ivica1.t1.x === ivica2.t1.x && ivica1.t1.y === ivica2.t1.y && ivica1.t2.x === ivica2.t2.x && ivica1.t2.y === ivica2.t2.y) ||
+      (ivica1.t1.x === ivica2.t2.x && ivica1.t1.y === ivica2.t2.y && ivica1.t2.x === ivica2.t1.x && ivica1.t2.y === ivica2.t1.y)
     );
   }
-  
 
-  draw() {
-    this.ctx.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
+  crtaj() {
+    this.kontekst.clearRect(0, 0, this.canvasRef.nativeElement.width, this.canvasRef.nativeElement.height);
   
-    // Draw triangles
-    this.ctx.strokeStyle = 'blue';
-    for (const triangle of this.triangles) {
-      this.ctx.beginPath();
-      this.ctx.moveTo(triangle.p1.x, triangle.p1.y);
-      this.ctx.lineTo(triangle.p2.x, triangle.p2.y);
-      this.ctx.lineTo(triangle.p3.x, triangle.p3.y);
-      this.ctx.closePath();
-      this.ctx.stroke();
+    // Nacrtaj trouglove
+    this.kontekst.strokeStyle = 'blue';
+    for (let trougao of this.trouglovi) {
+      this.kontekst.beginPath();
+      this.kontekst.moveTo(trougao.t1.x, trougao.t1.y);
+      this.kontekst.lineTo(trougao.t2.x, trougao.t2.y);
+      this.kontekst.lineTo(trougao.t3.x, trougao.t3.y);
+      this.kontekst.closePath();
+      this.kontekst.stroke();
     }
   
-    // Draw points
-    this.ctx.fillStyle = 'red';
-    for (const point of this.points) {
-      this.ctx.beginPath();
-      this.ctx.arc(point.x, point.y, 2, 0, Math.PI * 2);
-      this.ctx.fill();
+    // Nacrtaj tačke
+    this.kontekst.fillStyle = 'red';
+    for (let tacka of this.tacke) {
+      this.kontekst.beginPath();
+      this.kontekst.arc(tacka.x, tacka.y, 2, 0, Math.PI * 2);
+      this.kontekst.fill();
     }
   }
-  
 }
