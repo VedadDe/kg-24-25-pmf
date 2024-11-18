@@ -177,6 +177,7 @@ export class DelaunayComponent implements AfterViewInit {
           }
         }
       }
+      
 
       // Ukloni loše trouglove
       this.trouglovi = this.trouglovi.filter(trougao => !losiTrouglovi.includes(trougao));
