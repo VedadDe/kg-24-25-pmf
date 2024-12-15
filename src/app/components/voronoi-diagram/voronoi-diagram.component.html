@@ -1,0 +1,10 @@
+<!-- bsp-canvas.component.html -->
+<div style="text-align: center; margin-bottom: 10px;">
+    <button (click)="resetujTackuPogleda()">Resetuj Tačku Pogleda</button>
+    <button (click)="prebaciSplitterLinije()">
+      {{ prikaziSplitterLinije ? 'Sakrij' : 'Prikaži' }} Splitter Linije
+    </button>
+    <button (click)="dodajNasumicniPoligon()">Dodaj Nasumični Poligon</button>
+  </div>
+  <canvas #canvas width="800" height="600"></canvas>
+  

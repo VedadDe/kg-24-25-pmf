@@ -10,6 +10,7 @@ import { ConvexCheckComponent } from './components/convex-check/convex-check.com
 import { JarvisMarchComponent } from './components/jarvis-march/jarvis-march.component';
 import { TriangulationComponent } from './components/triangulation/triangulation.component';
 import { DelaunayComponent } from './components/delaunay/delaunay.component';
+import { VoronoiDiagramComponent } from './components/voronoi-diagram/voronoi-diagram.component';
 
 const routes: Routes = [  
 { path: 'point-segment', component: PointSegmentComponent },//
@@ -22,6 +23,7 @@ const routes: Routes = [
 { path: 'homework1', component: Zadaca1Component},//
 { path: 'triangulation', component: TriangulationComponent},//
 { path: 'delaunay', component: DelaunayComponent},//
+{ path: 'bsp', component: VoronoiDiagramComponent},//
 ];
 
 @NgModule({
